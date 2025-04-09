@@ -97,7 +97,34 @@ void sign_extend(unsigned offset,unsigned *extended_value)
 /* 10 Points */
 int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
 {
+    if(ALUOp == 0x0){ // Addition is performed
+        // Signed or not signed
+    }    
+    else if(ALUOp == 0x1){ // Subtraction is performed
+        // Signed or not signed
+    }
+    else if(ALUOp == 0x2){ // SLT is performed
 
+    }
+    else if (ALUOp == 0x3){ //SLT is performed but unsigned
+
+    }
+    else if (ALUOp == 0x4){ // And is performed
+
+    }
+    else if (ALUOp == 0x5){ // OR is performed
+
+    }
+    else if (ALUOp == 0x6){ // Shift left is performed
+
+    }
+    else if (ALUOp == 0x7){ // NOT(?) is performed
+
+    }
+    else{
+        return 1; // Halt flag
+    }
+    return 0;
 }
 
 /* Read / Write Memory */
