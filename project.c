@@ -72,8 +72,43 @@ void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsi
 /* 15 Points */
 int instruction_decode(unsigned op,struct_controls *controls)
 {
-    
-    
+    controls->RegDst = 0;
+    controls->Jump = 0;
+    controls->Branch = 0;
+    controls->MemRead = 0;
+    controls->MemtoReg = 0;
+    controls->ALUOp = 0;
+    controls->MemWrite = 0;
+    controls->ALUSrc = 0;
+    controls->RegWrite = 0;
+
+    switch(op) {
+        case 0x0:  // R-type
+            controls->RegDst = 1;
+            controls->RegWrite = 1;
+            controls->ALUOp = 7;
+            break;
+        case 0x23:  // lw
+            controls->MemRead = 1;
+            controls->MemtoReg = 1;
+            controls->ALUSrc = 1;
+            controls->RegWrite = 1;
+            break;
+        case 0x2B:  // sw
+            controls->MemWrite = 1;
+            controls->ALUSrc = 1;
+            break;
+        case 0x4:   // beq
+            controls->Branch = 1;
+            controls->ALUOp = 1;
+            break;
+        case 0x2:   // jump
+            controls->Jump = 1;
+            break;
+        default:
+            return 1;
+    }
+    return 0;
 
 }
 
@@ -90,60 +125,6 @@ void read_register(unsigned r1,unsigned r2,unsigned *Reg,unsigned *data1,unsigne
 /* 10 Points */
 void sign_extend(unsigned offset,unsigned *extended_value)
 {
-
-}
-
-/* ALU operations */
-/* 10 Points */
-int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
-{
-    if(ALUOp == 0x0){ // Addition is performed
-        // Signed or not signed
-    }    
-    else if(ALUOp == 0x1){ // Subtraction is performed
-        // Signed or not signed
-    }
-    else if(ALUOp == 0x2){ // SLT is performed
-
-    }
-    else if (ALUOp == 0x3){ //SLT is performed but unsigned
-
-    }
-    else if (ALUOp == 0x4){ // And is performed
-
-    }
-    else if (ALUOp == 0x5){ // OR is performed
-
-    }
-    else if (ALUOp == 0x6){ // Shift left is performed
-
-    }
-    else if (ALUOp == 0x7){ // NOT(?) is performed
-
-    }
-    else{
-        return 1; // Halt flag
-    }
-    return 0;
-}
-
-/* Read / Write Memory */
-/* 10 Points */
-int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsigned *memdata,unsigned *Mem)
-{
-    // read the register addressed at r1 and assign the value to data1
-    *data1 = Reg[r1];
-
-    // read the register addressed at r2 and assign the value to data2
-    *data2 = Reg[r2];
-
-}
-
-
-/* Write Register */
-/* 10 Points */
-void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,char RegWrite,char RegDst,char MemtoReg,unsigned *Reg)
-{
     // check if the 16th bit is 1 (indicates it's negative)
     // if so, make the rest of the bits after the 16th bit 1
     // else, keep the on bits and make the rest 0
@@ -151,10 +132,64 @@ void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,
     else *extended_value = offset & 0x0000FFFF;
 }
 
+/* ALU operations */
+/* 10 Points */
+int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
+{
+    if (ALUOp == 7) {  // R-type
+        switch(funct) {
+            case 0x20: ALU(data1, B, 0, ALUresult, Zero); break;  // add
+            case 0x22: ALU(data1, B, 1, ALUresult, Zero); break;  // sub
+            case 0x24: ALU(data1, B, 4, ALUresult, Zero); break;  // and
+            case 0x25: ALU(data1, B, 5, ALUresult, Zero); break;  // or
+            case 0x2A: ALU(data1, B, 2, ALUresult, Zero); break;  // slt
+            default: return 1;
+        }
+    } else {
+        ALU(data1, B, ALUOp, ALUresult, Zero);
+    }
+    
+    return 0;
+}
+
+/* Read / Write Memory */
+/* 10 Points */
+int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsigned *memdata,unsigned *Mem)
+{
+    if (ALUresult % 4 != 0) return 1;  // Check alignment
+    if (ALUresult > 0xFFFF) return 1;  // Check bounds
+    
+    if (MemRead) {
+        *memdata = Mem[ALUresult >> 2];
+    }
+    if (MemWrite) {
+        Mem[ALUresult >> 2] = data2;
+    }
+    return 0;
+}
+
+
+/* Write Register */
+/* 10 Points */
+void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,char RegWrite,char RegDst,char MemtoReg,unsigned *Reg)
+{
+    if (RegWrite) {
+        unsigned write_reg = RegDst ? r3 : r2;
+        if (write_reg != 0) {  // Cannot write to $0
+            Reg[write_reg] = MemtoReg ? memdata : ALUresult;
+        }
+    }
+}
+
 /* PC update */
 /* 10 Points */
 void PC_update(unsigned jsec,unsigned extended_value,char Branch,char Jump,char Zero,unsigned *PC)
 {
-
+    if (Jump) {
+        *PC = ((*PC & 0xF0000000) | (jsec << 2));
+    } else if (Branch && Zero) {
+        *PC += (extended_value << 2);
+    }
+    // PC+4 is handled in the main simulation loop
 }
 
