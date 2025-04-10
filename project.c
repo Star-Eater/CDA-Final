@@ -131,6 +131,11 @@ int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigne
 /* 10 Points */
 int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsigned *memdata,unsigned *Mem)
 {
+    // read the register addressed at r1 and assign the value to data1
+    *data1 = Reg[r1];
+
+    // read the register addressed at r2 and assign the value to data2
+    *data2 = Reg[r2];
 
 }
 
@@ -139,7 +144,11 @@ int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsig
 /* 10 Points */
 void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,char RegWrite,char RegDst,char MemtoReg,unsigned *Reg)
 {
-
+    // check if the 16th bit is 1 (indicates it's negative)
+    // if so, make the rest of the bits after the 16th bit 1
+    // else, keep the on bits and make the rest 0
+    if ((offset & 0x8000) == 0x8000) *extended_value = offset | 0xFFFF0000;
+    else *extended_value = offset & 0x0000FFFF;
 }
 
 /* PC update */
